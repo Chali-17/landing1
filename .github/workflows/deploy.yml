@@ -1,0 +1,38 @@
+# .github/workflows/deploy.yml
+name: CI/CD - Construir y Desplegar Landing 1
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Login a Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Construir y subir la imagen
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: angelchali/landing1-equipo01:latest
+
+      - name: Desplegar en el servidor
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ~/proyecto-docker
+            sudo docker-compose pull landing1
+            sudo docker-compose up -d --force-recreate landing1
+            echo "¡Despliegue de Landing 1 completado!"
